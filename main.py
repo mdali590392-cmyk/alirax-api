@@ -1,43 +1,40 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import secrets
-from pydantic import BaseModel
+import string
 
-app = FastAPI(title="ALIRAX AI API")
+app = FastAPI()
 
-# Database ki jagah abhi ke liye yahi pe keys save hongi
-all_keys = {}
+# CORS allow for app
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-class PromptRequest(BaseModel):
-    api_key: str
-    prompt: str
-
-# 1. KEY BANANE WALA GATE
+# Home Route - Check if API is live
 @app.get("/")
 def home():
-    return {"message": "ALIRAX AI API is Live - Made in Bihar"}
-
-@app.get("/generate-key")
-def generate_key():
-    new_key = f"alirax_sk_{secrets.token_urlsafe(12)}_BiharX"
-    all_keys[new_key] = {"usage": 0, "plan": "Free"}
     return {
-        "your_api_key": new_key,
-        "status": "Active",
-        "note": "Isko copy karke safe rakh lo, ye tumhari ALIRAX KEY hai"
+        "status": "success",
+        "message": "ALIRAX API is Live! 🚀",
+        "owner": "Ali Khan",
+        "api": "https://alirax-api.vercel.app"
     }
 
-# 2. AI KO CHALANE WALA GATE (Stealth Mode)
-@app.post("/v1/generate")
-def generate_text(data: PromptRequest):
-    if data.api_key not in all_keys:
-        return {"error": "Galat ALIRAX KEY hai bhai"}
-    
-    all_keys[data.api_key]["usage"] += 1
-    
-    # Yaha pe piche se Gemini/ChatGPT ka code lagega
-    # Abhi ke liye dummy reply
+# Generate API Key Route
+@app.get("/generate-key")
+def generate_key():
+    random_part = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(24))
+    api_key = f"alirax_sk_{random_part}"
     return {
-        "prompt": data.prompt,
-        "answer": f"ALIRAX ne tumhare liye ye banaya: '{data.prompt}' ka result. Piche se kaam ho raha hai par user ko pata nahi chalega.",
-        "powered_by": "ALIRAX AI - Hidden Router"
-  }
+        "api_key": api_key,
+        "status": "active",
+        "message": "Your ALIRAX Key Generated Successfully!"
+    }
+
+# For testing in browser - /key se bhi kaam karega
+@app.get("/key")
+def generate_key_short():
+    return generate_key()
