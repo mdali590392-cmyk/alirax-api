@@ -1,40 +1,48 @@
-from fastapi import FastAPI
+import os
+import hashlib
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
-import secrets
-import string
+from pydantic import BaseModel
 
 app = FastAPI()
 
-# CORS allow for app
+# 1. CORS Setup (Security)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://alirax-website.vercel.app", "*"], # Apni site allow karo
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Home Route - Check if API is live
+# Secret keys from Vercel Environment Variables
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+class PromptRequest(BaseModel):
+    prompt: str
+
+# 2. Key Verification Function (Hashing)
+def verify_alirax_key(api_key: str):
+    if not api_key or not api_key.startswith("alx_"):
+        raise HTTPException(status_code=401, detail="Invalid ALIRAX API Key format")
+    # Yahan hash check ka logic aayega
+    return True
+
 @app.get("/")
 def home():
-    return {
-        "status": "success",
-        "message": "ALIRAX API is Live! 🚀",
-        "owner": "Ali Khan",
-        "api": "https://alirax-api.vercel.app"
-    }
+    return {"status": "ALIRAX AI Backend is Active & Secure 🔥"}
 
-# Generate API Key Route
-@app.get("/generate-key")
-def generate_key():
-    random_part = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(24))
-    api_key = f"alirax_sk_{random_part}"
+@app.post("/v1/chat")
+def alirax_orchestrator(request: PromptRequest, x_alirax_key: str = Header(None)):
+    # Key check
+    verify_alirax_key(x_alirax_key)
+    
+    # ALIRAX Steering Logic (Background AI Call)
+    # Piche se Gemini / ChatGPT ko call karega aur user ko ALIRAX ban ke answer dega
+    user_prompt = request.prompt
+    
+    # Dummy Response Example (Yahan backend routing logic aayegi)
     return {
-        "api_key": api_key,
-        "status": "active",
-        "message": "Your ALIRAX Key Generated Successfully!"
+        "provider": "ALIRAX AI Engine",
+        "result": f"ALIRAX Processed: {user_prompt}"
     }
-
-# For testing in browser - /key se bhi kaam karega
-@app.get("/key")
-def generate_key_short():
-    return generate_key()
